@@ -238,7 +238,7 @@ def findTags(format_string):
 
 def sortPhotos(src_dir, dest_dir, sort_format, rename_format, recursive=False,
         copy_files=False, test=False, remove_duplicates=True, day_begins=0,
-        additional_groups_to_ignore=['File'], additional_tags_to_ignore=[],
+        additional_groups_to_ignore=[], additional_tags_to_ignore=[],
         use_only_groups=None, use_only_tags=None, verbose=True,
         ignore_timezone=False):
     """
@@ -502,7 +502,7 @@ def main():
     parser.add_argument('--day-begins', type=int, default=0, help='hour of day that new day begins (0-23), \n\
     defaults to 0 which corresponds to midnight.  Useful for grouping pictures with previous day.')
     parser.add_argument('--ignore-groups', type=str, nargs='+',
-                    default=[],
+                    default=['File'],
                     help='a list of tag groups that will be ignored for date informations.\n\
     list of groups and tags here: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/\n\
     by default the group \'File\' is ignored which contains file timestamp data')
