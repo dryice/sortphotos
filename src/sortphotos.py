@@ -32,7 +32,7 @@ exiftool_location = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'I
 
 # -------- convenience methods -------------
 
-def parse_date_exif(date_string):
+def parse_date_exif(date_string, ignore_timezone):
     """
     extract date info from EXIF data
     YYYY:MM:DD HH:MM:SS
@@ -77,7 +77,7 @@ def parse_date_exif(date_string):
             minute = int(time[1])
 
         # adjust for time-zone if needed
-        if len(time_entries) > 2:
+        if (not ignore_timezone) and len(time_entries) > 2:
             time_zone = time_entries[2].split(':')  # ['HH', 'MM']
 
             if len(time_zone) == 2:
@@ -112,7 +112,8 @@ def parse_date_exif(date_string):
 
 
 
-def get_oldest_timestamp(data, additional_groups_to_ignore, additional_tags_to_ignore, print_all_tags=False):
+def get_oldest_timestamp(data, additional_groups_to_ignore, additional_tags_to_ignore, ignore_timezone,
+                         print_all_tags=False):
     """data as dictionary from json.  Should contain only time stamps except SourceFile"""
 
     # save only the oldest date
@@ -147,7 +148,7 @@ def get_oldest_timestamp(data, additional_groups_to_ignore, additional_tags_to_i
                 date = date[0]
 
             try:
-                exifdate = parse_date_exif(date)  # check for poor-formed exif data, but allow continuation
+                exifdate = parse_date_exif(date, ignore_timezone)  # check for poor-formed exif data, but allow continuation
             except Exception as e:
                 exifdate = None
 
@@ -238,7 +239,8 @@ def findTags(format_string):
 def sortPhotos(src_dir, dest_dir, sort_format, rename_format, recursive=False,
         copy_files=False, test=False, remove_duplicates=True, day_begins=0,
         additional_groups_to_ignore=['File'], additional_tags_to_ignore=[],
-        use_only_groups=None, use_only_tags=None, verbose=True):
+        use_only_groups=None, use_only_tags=None, verbose=True,
+        ignore_timezone=False):
     """
     This function is a convenience wrapper around ExifTool based on common usage scenarios for sortphotos.py
 
@@ -278,6 +280,8 @@ def sortPhotos(src_dir, dest_dir, sort_format, rename_format, recursive=False,
         a list of tags that will be exclusived searched across for date info
     verbose : bool
         True if you want to see details of file processing
+   verbose : bool
+        True if you want to ignore timezone adjusting
 
     """
 
@@ -349,7 +353,7 @@ def sortPhotos(src_dir, dest_dir, sort_format, rename_format, recursive=False,
                 this_rename_format = this_rename_format.replace(original_tag, value)
 
         # extract timestamp date for photo
-        src_file, date, keys = get_oldest_timestamp(data, additional_groups_to_ignore, additional_tags_to_ignore)
+        src_file, date, keys = get_oldest_timestamp(data, additional_groups_to_ignore, additional_tags_to_ignore, ignore_timezone)
 
         # fixes further errors when using unicode characters like "\u20AC"
         src_file.encode('utf-8')
@@ -515,6 +519,8 @@ def main():
                     default=None,
                     help='specify a restricted set of tags to search for date information\n\
     e.g., EXIF:CreateDate')
+    parser.add_argument('--ignore-timezone', action='store_true',
+                        help='don\'t addjust timezone (if available) to UTC')
 
     # parse command line arguments
     args = parser.parse_args()
@@ -522,7 +528,7 @@ def main():
     sortPhotos(args.src_dir, args.dest_dir, args.sort, args.rename, args.recursive,
         args.copy, args.test, not args.keep_duplicates, args.day_begins,
         args.ignore_groups, args.ignore_tags, args.use_only_groups,
-        args.use_only_tags, not args.silent)
+        args.use_only_tags, not args.silent, args.ignore_timezone)
 
 if __name__ == '__main__':
     main()
